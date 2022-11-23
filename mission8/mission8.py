@@ -33,8 +33,7 @@ class Duree :
         :param d: Durée issue de la classe Durée
         :return: Entier, différence en secondes
         """
-        delt = self.to_secondes() - d.to_secondes()
-        return delt
+        return self.to_secondes() - d.to_secondes()
 
     def apres(self, d):
         """
@@ -42,10 +41,9 @@ class Duree :
         :param d: Instance Durée
         :return: True si self > d, sinon false
         """
-        if self.to_secondes() < d.to_secondes():
-            return False
-        else:
+        if self.delta(d) > 0:
             return True
+        return False
 
     def ajouter(self,d):
         """
@@ -78,6 +76,7 @@ class Chanson :
         self.titre = t
         self.auteur = a
         self.duree = d
+        self.length = d.to_secondes()
 
     def __str__(self):
         return "{TITRE} - {AUTEUR} - {DUREE}".format(TITRE=self.titre,AUTEUR=self.auteur,DUREE=self.duree)
@@ -85,18 +84,14 @@ class Chanson :
 class Album :
     def __init__(self, numero):
         self.numero = numero
+        self.duree = 0
+        self.count = 0
         self.music = []
-
+ 
     def add(self,chanson):
-        t = Duree(0,0,0)
-        lim = Duree(1,15,0)
-        for i in self.music:
-            t.ajouter(i.duree)
-        if len(self.music) < 100 and t.to_secondes() + chanson.duree.to_secondes() <= lim.to_secondes():
-            self.music.append(chanson)
-            return self
-        else:
-            return False
+        self.count += 1
+        self.music.append("{:02}: ".format(self.count) + chanson.__str__())
+        self.duree += chanson.length
 
     def __str__(self):
         text = ""
@@ -104,11 +99,35 @@ class Album :
             text += "{:02}: ".format(i) + str(self.music[i]) + "\n"
         return text
 
-if __name__ == "__main__":
     
-    with open("music-db.txt","r") as f:
-        l = f.read().splitlines()
-        lc = []
-        for i in range(len(l)):
-            l[i] = l[i].split()
-            l[i] = Chanson(l[i][0], l[i][1], Duree(0,int(l[i][2]),int(l[i][3])))
+with open("music-db.txt", "r") as file:
+    all_music = file.read().split("\n")
+    for i in range(len(all_music)):
+        all_music[i] = all_music[i].split(" ")
+
+count = 0
+music_count = 0
+while True:
+    count += 1
+    album = Album(count)
+    while True:
+        if music_count == len(all_music):
+            break
+        title = " ".join(all_music[music_count][0].split("_"))
+        try:
+            artist = " ".join(all_music[music_count][1].split("_"))
+        except:
+            pass
+        try:
+            length = Duree(0, int(all_music[music_count][-2]), int(all_music[music_count][-1]))
+            chanson = Chanson(title, artist, length)
+        except:
+            continue
+        if album.duree + length.to_secondes() < 4500:
+            album.add(chanson)
+            music_count += 1
+        else:
+            break
+    print(album)
+    if music_count == len(all_music):
+        break
